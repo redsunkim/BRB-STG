@@ -203,6 +203,10 @@ tbody tr.selected-row{background:#eff6ff}
     <div class="card-title">📋 사업 정보</div>
     <div class="info-grid">
       <div class="form-group">
+        <label>사업코드</label>
+        <input type="text" id="f-code" placeholder="사업코드를 입력하세요">
+      </div>
+      <div class="form-group">
         <label>사업명 *</label>
         <input type="text" id="f-name" placeholder="사업명을 입력하세요" oninput="updateNavEditing()">
       </div>
@@ -301,6 +305,7 @@ tbody tr.selected-row{background:#eff6ff}
         <tr>
           <th><input type="checkbox" id="check-all" onchange="toggleCheckAll(this)"></th>
           <th>#</th>
+          <th>사업코드</th>
           <th>사업명</th>
           <th>담당자</th>
           <th>부서</th>
@@ -757,6 +762,7 @@ function resetForm() {
   STATE.selections = {};
   STATE.notes = {};
   STATE.isContract = false;
+  document.getElementById('f-code').value = '';
   document.getElementById('f-name').value = '';
   document.getElementById('f-manager').value = '';
   document.getElementById('f-department').value = '';
@@ -796,6 +802,7 @@ async function saveProject() {
   const grade = calcGrade(total);
 
   const body = {
+    code: document.getElementById('f-code').value.trim(),
     name,
     manager: document.getElementById('f-manager').value.trim(),
     department: document.getElementById('f-department').value.trim(),
@@ -856,6 +863,7 @@ function loadProject(project) {
   STATE.notes = project.notes ? {...project.notes} : {};
   STATE.isContract = project.is_contract || false;
 
+  document.getElementById('f-code').value = project.code || '';
   document.getElementById('f-name').value = project.name || '';
   document.getElementById('f-manager').value = project.manager || '';
   document.getElementById('f-department').value = project.department || '';
@@ -883,6 +891,7 @@ function renderList() {
     <tr onclick="loadProject(${JSON.stringify(p).replace(/"/g,'&quot;')})">
       <td onclick="event.stopPropagation()"><input type="checkbox" class="row-check" value="${p.id}" onchange="updateCompareBtn()"></td>
       <td>${i+1}</td>
+      <td>${p.code||''}</td>
       <td><strong>${p.name||''}</strong></td>
       <td>${p.manager||''}</td>
       <td>${p.department||''}</td>
@@ -1105,6 +1114,7 @@ function exportExcelSingle() {
   // Sheet 1: 요약
   const summaryData = [
     ['사업성 평가 요약'],
+    ['사업코드', document.getElementById('f-code').value],
     ['사업명', name],
     ['담당자', document.getElementById('f-manager').value],
     ['부서', document.getElementById('f-department').value],
@@ -1186,6 +1196,7 @@ function exportPDF() {
 }
 
 function generatePrintReport() {
+  const code = document.getElementById('f-code').value;
   const name = document.getElementById('f-name').value || '(미정)';
   const manager = document.getElementById('f-manager').value;
   const dept = document.getElementById('f-department').value;
@@ -1221,6 +1232,7 @@ function generatePrintReport() {
     <div class="pr-section">
       <div class="pr-title">📊 사업성 평가 보고서</div>
       <div class="pr-info-grid">
+        <div class="pr-info-item"><label>사업코드</label><p>${code||'-'}</p></div>
         <div class="pr-info-item"><label>사업명</label><p>${name}</p></div>
         <div class="pr-info-item"><label>담당자</label><p>${manager||'-'}</p></div>
         <div class="pr-info-item"><label>부서</label><p>${dept||'-'}</p></div>

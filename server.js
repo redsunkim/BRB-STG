@@ -10,6 +10,7 @@ const db = new Database(path.join(__dirname, 'eval.db'));
 db.exec(`
   CREATE TABLE IF NOT EXISTS projects (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    code        TEXT    DEFAULT '',
     name        TEXT    NOT NULL DEFAULT '(미입력)',
     manager     TEXT    DEFAULT '',
     department  TEXT    DEFAULT '',
@@ -27,6 +28,11 @@ db.exec(`
     updated_at  TEXT    DEFAULT (datetime('now','localtime'))
   )
 `);
+
+// 기존 DB에 code 컬럼 없으면 추가 (마이그레이션)
+try {
+  db.exec(`ALTER TABLE projects ADD COLUMN code TEXT DEFAULT ''`);
+} catch (_) {}
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -57,13 +63,13 @@ app.get('/api/projects/:id', (req, res) => {
 // Create
 app.post('/api/projects', (req, res) => {
   try {
-    const { name, manager, department, eval_date, memo, selections, notes,
+    const { code, name, manager, department, eval_date, memo, selections, notes,
             is_contract, score1, score2, score3, total, grade } = req.body;
     const r = db.prepare(`
-      INSERT INTO projects (name,manager,department,eval_date,memo,selections,notes,
+      INSERT INTO projects (code,name,manager,department,eval_date,memo,selections,notes,
                             is_contract,score1,score2,score3,total,grade)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-    `).run(name||'(미입력)', manager||'', department||'', eval_date||'', memo||'',
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    `).run(code||'', name||'(미입력)', manager||'', department||'', eval_date||'', memo||'',
            JSON.stringify(selections||{}), JSON.stringify(notes||{}),
            is_contract?1:0, score1||0, score2||0, score3||0, total||0, grade||'-');
     res.json({ id: r.lastInsertRowid, ok: true });
@@ -73,14 +79,14 @@ app.post('/api/projects', (req, res) => {
 // Update
 app.put('/api/projects/:id', (req, res) => {
   try {
-    const { name, manager, department, eval_date, memo, selections, notes,
+    const { code, name, manager, department, eval_date, memo, selections, notes,
             is_contract, score1, score2, score3, total, grade } = req.body;
     db.prepare(`
-      UPDATE projects SET name=?,manager=?,department=?,eval_date=?,memo=?,
+      UPDATE projects SET code=?,name=?,manager=?,department=?,eval_date=?,memo=?,
         selections=?,notes=?,is_contract=?,score1=?,score2=?,score3=?,total=?,grade=?,
         updated_at=datetime('now','localtime')
       WHERE id=?
-    `).run(name||'(미입력)', manager||'', department||'', eval_date||'', memo||'',
+    `).run(code||'', name||'(미입력)', manager||'', department||'', eval_date||'', memo||'',
            JSON.stringify(selections||{}), JSON.stringify(notes||{}),
            is_contract?1:0, score1||0, score2||0, score3||0, total||0, grade||'-',
            req.params.id);
