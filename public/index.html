@@ -297,6 +297,7 @@ tbody tr.selected-row{background:#eff6ff}
   <div class="list-controls">
     <input type="text" class="search-input" id="search-input" placeholder="사업명, 담당자 검색..." oninput="renderList()">
     <button class="btn btn-primary" onclick="showView('form');resetForm()">+ 새 평가 작성</button>
+    <button class="btn btn-success" onclick="exportExcelList()">📥 목록 Excel 내보내기</button>
     <button class="btn btn-outline" id="compare-selected-btn" onclick="compareSelected()" disabled>📊 선택 항목 비교</button>
   </div>
   <div class="table-wrap">
@@ -1187,6 +1188,38 @@ function exportExcelCompare() {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '비교');
   XLSX.writeFile(wb, `사업비교_${date}.xlsx`);
   showToast('비교 Excel이 다운로드되었습니다', 'green');
+}
+
+// ===================== EXCEL EXPORT (List) =====================
+function exportExcelList() {
+  if (!window.XLSX) { showToast('오류: XLSX 라이브러리 로드 실패', 'red'); return; }
+  const q = (document.getElementById('search-input').value || '').toLowerCase();
+  const list = STATE.projects.filter(p =>
+    (!q || (p.name||'').toLowerCase().includes(q) || (p.manager||'').toLowerCase().includes(q))
+  );
+  if (list.length === 0) { showToast('내보낼 데이터가 없습니다', 'red'); return; }
+
+  const headers = ['No','사업코드','사업명','담당자','부서','작성일','①수주확도','②사업중요도','③위험점검','종합점수','등급'];
+  const rows = list.map((p, i) => [
+    i + 1,
+    p.code || '',
+    p.name || '',
+    p.manager || '',
+    p.department || '',
+    p.eval_date || '',
+    parseFloat(p.score1 || 0).toFixed(1),
+    parseFloat(p.score2 || 0).toFixed(1),
+    parseFloat(p.score3 || 0).toFixed(1),
+    parseFloat(p.total || 0).toFixed(1),
+    p.grade || '-'
+  ]);
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  ws['!cols'] = [4,12,24,10,10,12,12,14,12,10,8].map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws, '사업목록');
+  XLSX.writeFile(wb, `사업목록_${todayStr()}.xlsx`);
+  showToast('목록 Excel이 다운로드되었습니다', 'green');
 }
 
 // ===================== PDF / PRINT =====================
